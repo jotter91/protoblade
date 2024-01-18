@@ -1,3 +1,5 @@
+import scipy.interpolate
+
 from protoblade import geom
 import numpy as np
 
@@ -43,3 +45,72 @@ def test_calculate_curve_length():
                                                 0.44659376, 0.52102605, 0.59545834, 0.66989063, 0.74432293,
                                                 0.81875522, 0.89318751, 0.96761981, 1.0420521,  1.11648439,
                                                 1.19091668, 1.26534898, 1.33978127, 1.41421356]))
+
+def test_split_into_le_main_te(vki_files):
+    ps_pnts = geom.load_curves_from_fpd(vki_files['pressure'])
+    #ps_pnts['y'] = -ps_pnts['y']
+    ss_pnts = geom.load_curves_from_fpd(vki_files['suction'])
+    import matplotlib.pyplot as plt
+
+    plt.figure()
+    plt.plot(ss_pnts['x'],ss_pnts['y'])
+    plt.savefig('fisrt_blade.png')
+
+    pnts = ss_pnts
+
+    #calculate curvature
+    s = geom.calculate_curve_length(pnts['x'],pnts['y'])
+
+    dy_dx = np.diff(s)/np.diff(pnts['x'])
+    d2y_dx = np.diff(dy_dx)/np.diff(pnts['x'][:-1])
+    grad_s = np.gradient(s)
+    sec_s = np.gradient(grad_s)
+
+    curv = sec_s/((1.0+grad_s**2)**1.5)
+
+
+    plt.figure()
+    plt.plot(pnts['x'][:-2])#,d2y_dx)
+    plt.savefig('dydx.png')
+
+    #s_fit = scipy.interpolate.CubicSpline(s,pnts['x'])
+
+    plt.figure()
+    plt.plot(s,pnts['x'])
+    plt.savefig('curv.png')
+
+    #s_grad = s_fit.derivative(2)
+
+    #plt.figure()
+    #plt.plot(s,s_grad(pnts['x']))
+    #plt.savefig('s_grad.png')
+
+
+
+    plt.figure()
+    plt.plot(pnts['x'], grad_s )
+    plt.savefig('grad.png')
+
+
+    plt.figure()
+    plt.plot(pnts['x'],curv )
+    plt.ylim([-1e-7,1e-7])
+    plt.savefig('curvature.png')
+
+    #look for sign change
+    idx1 = np.where(curv[:-1] * curv[1:] < 0)[0] + 1
+
+    plt.figure()
+    plt.plot(pnts['x'],pnts['y'],'-')
+    plt.plot(pnts['x'][idx1][0],pnts['y'][idx1][0],'x')
+
+
+    #look for sign change in x
+    diff_x = np.diff(pnts['x'])
+    idx2 = np.where(np.diff(np.sign(diff_x)) != 0)[0] + 1
+    plt.plot(pnts['x'][idx2][-1],pnts['y'][idx2][-1],'x')
+    plt.savefig('blade.png')
+
+    plt.figure()
+    plt.plot(diff_x)
+    plt.savefig('diff_x.png')

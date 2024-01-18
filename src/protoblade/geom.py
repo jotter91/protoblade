@@ -43,7 +43,15 @@ def calculate_curve_length(x:NDArray,y:NDArray)->NDArray:
         s[i] =  s[i-1] + np.sqrt(dx * dx + dy * dy)
     return s
 
-def reinterpolate_curve(x,y,s,base=1.5)->Tuple[NDArray,NDArray]:
+def reinterpolate_curve(x:NDArray,y:NDArray,s:NDArray,base:int=1.5)->Tuple[NDArray,NDArray,NDArray]:
+    """
+    Reinterpolate the arrays x,y and s based on a power law to base
+    :param x: array for axial co-ordinate
+    :param y: array for y co-ordinate
+    :param s: array for curve length
+    :param base: base for power law
+    :return: (x_new,y_new,s_new)
+    """
     # resample
     N = x.shape[0]
     fx = interp1d(s, x)
@@ -65,12 +73,14 @@ def reinterpolate_curve(x,y,s,base=1.5)->Tuple[NDArray,NDArray]:
 
     s_new = np.concatenate((s_new, s_4)) * del_s
 
-    x = np.zeros(len(s_new))
-    y = np.zeros(len(s_new))
+    x_new = np.zeros(len(s_new))
+    y_new = np.zeros(len(s_new))
     for i in range(len(s_new)):
-        x[i] = fx(s_new[i])
-        y[i] = fy(s_new[i])
+        x_new[i] = fx(s_new[i])
+        y_new[i] = fy(s_new[i])
 
     return x, y,s_new
 
 
+def calculate_curvature()->NDArray:
+    return
